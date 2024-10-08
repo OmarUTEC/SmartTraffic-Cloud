@@ -1,8 +1,12 @@
-from flask import Flask, render_template
+from flask import Flask,flash, render_template, redirect, url_for, request, session
 
 app = Flask(__name__)
 
-@app.route('/')
+@app.route('/login', methods=['POST', 'GET'])
+def login():
+    return redirect(url_for('index'))
+
+@app.route('/index')
 def index():
     return render_template('index.html')
 @app.route('/avatars/')
