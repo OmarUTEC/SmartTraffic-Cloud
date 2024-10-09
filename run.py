@@ -2,11 +2,11 @@ from flask import Flask,flash, render_template, redirect, url_for, request, sess
 
 app = Flask(__name__)
 
-@app.route('/login', methods=['POST', 'GET'])
+@app.route('/')
 def login():
-    return redirect(url_for('index'))
+    return render_template('login.html')
 
-@app.route('/index')
+@app.route('/index', methods=['POST', 'GET'])
 def index():
     return render_template('index.html')
 @app.route('/avatars/')
