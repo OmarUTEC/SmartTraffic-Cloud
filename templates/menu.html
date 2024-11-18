@@ -168,11 +168,13 @@
                 </a>
                 <div class="collapse" id="maps">
                   <ul class="nav nav-collapse">
+                    {% if session['tipo_usuario'] == 'administrador' %}
                     <li>
                       <a href="{{ url_for('googlemaps') }}">
                         <span class="sub-item">Google Maps</span>
                       </a>
                     </li>
+                    {% endif %}
                     <li>
                       <a href="{{ url_for('jsvectormap') }}">
                         <span class="sub-item">Jsvectormap</span>

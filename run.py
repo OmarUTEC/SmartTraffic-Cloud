@@ -1,8 +1,10 @@
 from flask import Flask, flash, render_template, redirect, url_for, request, session
 from models.models_usuarios import db, Usuario, Administrador, Visitante
-from flask_login import LoginManager, login_user, logout_user, login_required
+from flask_login import LoginManager, login_user, logout_user, login_required, current_user
+from functools import wraps
 
 import datetime
+
 
 app = Flask(__name__)
 
@@ -27,22 +29,37 @@ def logout():
     flash('Sesión cerrada.')
     return redirect(url_for('login'))
 
+def admin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        # Verificar el tipo de usuario desde la sesión
+        if session.get('tipo_usuario') != 'administrador':
+            flash("Acceso denegado. Solo los administradores pueden acceder a esta página.", "danger")
+            return redirect(url_for('index'))
+        return f(*args, **kwargs)
+    return decorated_function
+
 @app.route('/', methods=['POST', 'GET'])
 def login():
     if request.method == 'POST':
         correo = request.form['correo']
         password = request.form['password']
+
         user = Usuario.query.filter_by(correo=correo).first()
-
-        print("Consulte > ", correo, " - ", password)
-        print("Password > ", user)
-
         if user and user.password == password:
-            login_user(user)
-            flash('Inicio de sesión exitoso.')
-            return redirect(url_for('index'))  # Cambiar por tu ruta principal
+            if Administrador.query.filter_by(id=user.id).first():
+                session['tipo_usuario'] = 'administrador'
+            elif Visitante.query.filter_by(id=user.id).first():
+                session['tipo_usuario'] = 'visitante'
+            else:
+                flash('NO se pudo determinar el tipo de usuario. Problema de seguridad', 'danger')
+                return render_template('login.html')
+
+            login_user(user)  
+            flash('Inicio de sesión exitoso.', 'success')
+            return redirect(url_for('index'))  
         else:
-            flash('Correo o contraseña incorrectos.')
+            flash('Correo o contraseña incorrectos', 'danger')
 
     return render_template('login.html')
 
@@ -162,6 +179,7 @@ def datatables():
 
 @app.route('/googlemaps/')
 @login_required
+@admin_required
 def googlemaps():
     return render_template('maps/googlemaps.html')
 
