@@ -33,3 +33,18 @@ class Visitante(Usuario):
         'polymorphic_identity': 'visitante',
         'concrete': True
     }
+
+    @classmethod
+    def actualizar_tiempo_visitante(cls, session, visitante_id, incremento):
+        visitante = Visitante.query.get(visitante_id)
+        try:
+            db.session.execute(
+                f"SELECT incrementar_tiempo_activo({incremento},{visitante_id})"
+            )
+            db.session.commit()
+            return f"Update - session time"
+        except Exception as e:
+            return f"error: {e}"
+
+
+

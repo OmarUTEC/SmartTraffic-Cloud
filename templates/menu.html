@@ -59,46 +59,14 @@
                         <span class="sub-item">Avatars</span>
                       </a>
                     </li>
-                    <li>
-                      <a href="{{ url_for('buttons') }}">
-                        <span class="sub-item">Buttons</span>
-                      </a>
-                    </li>
-                    <li>
-                      <a href="{{ url_for('gridsystem') }}">
-                        <span class="sub-item">Grid System</span>
-                      </a>
-                    </li>
-                    <li>
-                      <a href="{{ url_for('panels') }}">
-                        <span class="sub-item">Panels</span>
-                      </a>
-                    </li>
-                    <li>
-                      <a href="{{ url_for('notifications') }}">
-                        <span class="sub-item">Notifications</span>
-                      </a>
-                    </li>
-                    <li>
-                      <a href="{{ url_for('sweetalert') }}">
-                        <span class="sub-item">Sweet Alert</span>
-                      </a>
-                    </li>
-                    <li>
-                      <a href="{{ url_for('font_awesome_icons') }}">
-                        <span class="sub-item">Font Awesome Icons</span>
-                      </a>
-                    </li>
+                    
+                    
                     <li>
                       <a href="{{ url_for('simple_line_icons') }}">
                         <span class="sub-item">Simple Line Icons</span>
                       </a>
                     </li>
-                    <li>
-                      <a href="{{ url_for('typography') }}">
-                        <span class="sub-item">Typography</span>
-                      </a>
-                    </li>
+                    
                   </ul>
                 </div>
               </li>
@@ -123,22 +91,7 @@
                   </ul>
                 </div>
               </li>
-              <li class="nav-item">
-                <a data-bs-toggle="collapse" href="#forms">
-                  <i class="fas fa-pen-square"></i>
-                  <p>Forms</p>
-                  <span class="caret"></span>
-                </a>
-                <div class="collapse" id="forms">
-                  <ul class="nav nav-collapse">
-                    <li>
-                      <a href="{{ url_for('forms') }}">
-                        <span class="sub-item">Basic Form</span>
-                      </a>
-                    </li>
-                  </ul>
-                </div>
-              </li>
+              
               <li class="nav-item">
                 <a data-bs-toggle="collapse" href="#tables">
                   <i class="fas fa-table"></i>
@@ -150,34 +103,6 @@
                     <li>
                       <a href="{{ url_for('tables') }}">
                         <span class="sub-item">Basic Table</span>
-                      </a>
-                    </li>
-                    <li>
-                      <a href="{{ url_for('datatables') }}">
-                        <span class="sub-item">Datatables</span>
-                      </a>
-                    </li>
-                  </ul>
-                </div>
-              </li>
-              <li class="nav-item">
-                <a data-bs-toggle="collapse" href="#maps">
-                  <i class="fas fa-map-marker-alt"></i>
-                  <p>Maps</p>
-                  <span class="caret"></span>
-                </a>
-                <div class="collapse" id="maps">
-                  <ul class="nav nav-collapse">
-                    {% if session['tipo_usuario'] == 'administrador' %}
-                    <li>
-                      <a href="{{ url_for('googlemaps') }}">
-                        <span class="sub-item">Google Maps</span>
-                      </a>
-                    </li>
-                    {% endif %}
-                    <li>
-                      <a href="{{ url_for('jsvectormap') }}">
-                        <span class="sub-item">Jsvectormap</span>
                       </a>
                     </li>
                   </ul>
@@ -196,21 +121,10 @@
                         <span class="sub-item">Chart Js</span>
                       </a>
                     </li>
-                    <li>
-                      <a href="{{ url_for('sparkline') }}">
-                        <span class="sub-item">Sparkline</span>
-                      </a>
-                    </li>
                   </ul>
                 </div>
               </li>
-              <li class="nav-item">
-                <a href="{{ url_for('widgets') }}">
-                  <i class="fas fa-desktop"></i>
-                  <p>Widgets</p>
-                  <span class="badge badge-success">4</span>
-                </a>
-              </li>
+              
               <li class="nav-item">
                 <a href="http://github.com">
                   <i class="fas fa-file"></i>

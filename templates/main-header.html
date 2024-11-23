@@ -336,7 +336,13 @@
                     </div>
                     <span class="profile-username">
                       <span class="op-7">Hi,</span>
-                      <span class="fw-bold">Hizrian</span>
+                      {% if session['tipo_usuario'] == 'administrador' %}
+                      <span class="fw-bold">{{session['nombre']}} {{session['apellidos']}}</span>
+                      {% elif session['tipo_usuario'] == "visitante" %}
+                      <span class="fw-bold">{{session['username']}}</span>
+                      {% else %}
+                      <span class="fw-bold">Intruso!!</span>
+                      {% endif %}
                     </span>
                   </a>
                   <ul class="dropdown-menu dropdown-user animated fadeIn">

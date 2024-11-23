@@ -21,18 +21,28 @@ login_manager.init_app(app)
 def load_user(user_id):
     return Usuario.query.get(int(user_id))
 
-
 @app.route('/logout')
 @login_required
 def logout():
+    if session['tipo_usuario'] == "visitante":
+        
+        session['end_time'] = (datetime.datetime.now().hour,datetime.datetime.now().minute)
+        activity_time = (session['end_time'][0]-session['start_time'][0])*60-(session['end_time'][1]-session['start_time'][1])
+        try:
+            Visitante.actualizar_tiempo_visitante(db.session,session['user_id'], abs(activity_time))
+            print(f"Succesful updated time: with({activity_time})")
+        except Exception as e:
+            print(f"Error: {e}")
+
     logout_user()
+    
     flash('Sesión cerrada.')
     return redirect(url_for('login'))
 
 def admin_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        # Verificar el tipo de usuario desde la sesión
+  
         if session.get('tipo_usuario') != 'administrador':
             flash("Acceso denegado. Solo los administradores pueden acceder a esta página.", "danger")
             return redirect(url_for('index'))
@@ -47,10 +57,21 @@ def login():
 
         user = Usuario.query.filter_by(correo=correo).first()
         if user and user.password == password:
-            if Administrador.query.filter_by(id=user.id).first():
+            consultaAdministrador = Administrador.query.filter_by(id=user.id).first()
+            consultaVisitante = Visitante.query.filter_by(id=user.id).first()
+            if consultaAdministrador:
+                session['user_id'] = consultaAdministrador.id
                 session['tipo_usuario'] = 'administrador'
-            elif Visitante.query.filter_by(id=user.id).first():
+                session['nombre'] = consultaAdministrador.nombre
+                session['apellidos'] = consultaAdministrador.apellidos
+            elif consultaVisitante:
+                session['user_id'] = consultaVisitante.id
                 session['tipo_usuario'] = 'visitante'
+                session['username'] = consultaVisitante.username
+                session['start_time'] = (datetime.datetime.now().hour,datetime.datetime.now().minute)
+                consultaVisitante.ultimo_ingreso = datetime.datetime.now()  # O el valor que desees asignar
+                db.session.commit()
+                
             else:
                 flash('NO se pudo determinar el tipo de usuario. Problema de seguridad', 'danger')
                 return render_template('login.html')
@@ -71,16 +92,16 @@ def signup():
         #password_hash = generate_password_hash(password)
         is_admin = request.form.get('is_admin') == 'true'
 
-        if is_admin:  # Si es un administrador
+        if is_admin:  
             nombre = request.form['nombre']
             apellidos = request.form['apellidos']
             telefono = request.form['telefono']
             new_admin = Administrador(correo=correo, password=password, nombre=nombre, apellidos=apellidos, telefono=telefono)
             db.session.add(new_admin)
             db.session.commit()
-
+            
             flash('Administrador registrado correctamente.')
-        else:  # Si es un visitante
+        else: 
             username = request.form['username']
             new_visitor = Visitante(correo=correo, password=password, username=username, ultimo_ingreso=datetime.datetime.now())
             db.session.add(new_visitor)
