@@ -120,6 +120,46 @@ def signup():
 def index():
     return render_template('index.html')
 
+@app.route('/estadisticas/')
+@login_required
+def estadisticas():
+    return render_template('estadisticas.html')
+
+@app.route('/analisis/')
+@login_required
+def analisis():
+    return render_template('analisis.html')
+
+@app.route('/monitoreo/')
+@login_required
+def monitoreo():
+    return render_template('monitoreo.html')
+
+@app.route('/usuarios/')
+@login_required
+@admin_required
+def usuarios():
+    return render_template('administrador_de_usuarios.html')
+
+@app.route('/dispositivos')
+@login_required
+@admin_required
+def dispositivos():
+    return render_template('programacion_de_dispositivos.html')
+
+
+
+
+
+
+
+
+
+
+
+
+
+#TEMPLATES ROUTES
 @app.route('/avatars/')
 @login_required
 def avatars():
@@ -165,8 +205,6 @@ def simple_line_icons():
 def typography():
     return render_template('components/typography.html')
 
-
-
 @app.route('/sidebar/')
 @login_required
 def sidebar():
@@ -177,14 +215,10 @@ def sidebar():
 def icon_menu():
     return render_template('icon-menu.html')
 
-
-
 @app.route('/forms/')
 @login_required
 def forms():
     return render_template('forms/forms.html')
-
-
 
 @app.route('/tables/')
 @login_required
@@ -196,11 +230,8 @@ def tables():
 def datatables():
     return render_template('tables/datatables.html')
 
-
-
 @app.route('/googlemaps/')
 @login_required
-@admin_required
 def googlemaps():
     return render_template('maps/googlemaps.html')
 
@@ -208,8 +239,6 @@ def googlemaps():
 @login_required
 def jsvectormap():
     return render_template('maps/jsvectormap.html')
-
-
 
 @app.route('/charts/')
 @login_required
@@ -225,6 +254,10 @@ def sparkline():
 @login_required
 def widgets():
     return render_template('widgets.html')
+
+
+
+
 
 
 
