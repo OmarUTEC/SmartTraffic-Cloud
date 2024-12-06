@@ -1,17 +1,24 @@
-from flask import Flask, flash, render_template, redirect, url_for, request, session
+from flask import Flask, flash, render_template, redirect, url_for, request, session, jsonify
 from models.models_usuarios import db, Usuario, Administrador, Visitante
+from models.models_traffic import db, Semaforo, History, Interseccion, Sensor, Avenida, AvenidaInterseccion
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from functools import wraps
+from flask_socketio import SocketIO, emit
+from flask_cors import CORS
 
 import datetime
+import random
+import time
 
 
 app = Flask(__name__)
-
+CORS(app)
 app.secret_key = "mys3cr3tk3y"
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:@localhost:5432/smarttraffic'
+#app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgresql:admin123@18.209.10.52:5432/pro_icc'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db.init_app(app)
+socketio = SocketIO(app, cors_allowed_origins="*")
 
 # Inicializa Flask-Login
 login_manager = LoginManager()
@@ -24,20 +31,23 @@ def load_user(user_id):
 @app.route('/logout')
 @login_required
 def logout():
-    if session['tipo_usuario'] == "visitante":
-        
-        session['end_time'] = (datetime.datetime.now().hour,datetime.datetime.now().minute)
-        activity_time = (session['end_time'][0]-session['start_time'][0])*60-(session['end_time'][1]-session['start_time'][1])
-        try:
-            Visitante.actualizar_tiempo_visitante(db.session,session['user_id'], abs(activity_time))
-            print(f"Succesful updated time: with({activity_time})")
-        except Exception as e:
-            print(f"Error: {e}")
+    try:
+        if session['tipo_usuario'] == "visitante":
+            
+            session['end_time'] = (datetime.datetime.now().hour,datetime.datetime.now().minute)
+            activity_time = (session['end_time'][0]-session['start_time'][0])*60-(session['end_time'][1]-session['start_time'][1])
+            try:
+                Visitante.actualizar_tiempo_visitante(db.session,session['user_id'], abs(activity_time))
+                print(f"Succesful updated time: with({activity_time})")
+            except Exception as e:
+                print(f"Error: {e}")
 
-    logout_user()
-    
-    flash('Sesión cerrada.')
-    return redirect(url_for('login'))
+        logout_user()
+        
+        flash('Sesión cerrada.')
+        return redirect(url_for('login'))
+    except Exception as e:
+        return f"Error: {e}", 500
 
 def admin_required(f):
     @wraps(f)
@@ -112,6 +122,22 @@ def signup():
         return redirect(url_for('login'))  
 
     return render_template('register.html')
+
+def get_sensor_data():
+    return {
+        'x': [1, 2, 3, 4, 5],  # Datos del eje X (tiempo, por ejemplo)
+        'y': [random.randint(0, 100) for _ in range(5)]  # Datos del eje Y (valores aleatorios)
+    }
+
+@socketio.on('connect')
+def handle_connect():
+    print("Client connected")
+    emit('new_data', get_sensor_data())  # Envía datos iniciales al conectarse
+
+@socketio.on('get_data')
+def handle_get_data():
+    print("Data request received")
+    emit('new_data', get_sensor_data()) 
 
 
 
@@ -262,8 +288,10 @@ def widgets():
 
 
 
-
-@app.route('/test_db')
+@app.errorhandler(Exception)
+def handle_exception(e):
+    return f"Error: {str(e)}", 500
+@app.route('/check_db')
 def test_db():
     try:
         # Realiza una consulta sencilla
@@ -274,4 +302,5 @@ def test_db():
     
 
 if __name__ == '__main__':
-    app.run(port=3000, host="0.0.0.0",debug=True)
+    socketio.run(app, host='0.0.0.0', port=3000, debug=True)
+
