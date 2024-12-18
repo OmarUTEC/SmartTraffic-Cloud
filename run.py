@@ -1,24 +1,27 @@
 from flask import Flask, flash, render_template, redirect, url_for, request, session, jsonify
-from models.models_usuarios import db, Usuario, Administrador, Visitante
-from models.models_traffic import db, Semaforo, History, Interseccion, Sensor, Avenida, AvenidaInterseccion
+from models.models_usuarios import *
+#from models.models_traffic import db, Semaforo, History, Interseccion, Sensor, Avenida, AvenidaInterseccion, HistoriaAvenida
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from functools import wraps
-from flask_socketio import SocketIO, emit
+#from flask_socketio import SocketIO, emit
 from flask_cors import CORS
 
 import datetime
 import random
+import requests
 import time
+import json
 
 
 app = Flask(__name__)
 CORS(app)
 app.secret_key = "mys3cr3tk3y"
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:@localhost:5432/smarttraffic'
-#app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgresql:admin123@18.209.10.52:5432/pro_icc'
+#app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:@localhost:5432/smarttraffic'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgresql:admin123@localhost:5432/pro_icc'
+#app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgresql:admin123@db:5432/pro_icc'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db.init_app(app)
-socketio = SocketIO(app, cors_allowed_origins="*")
+#socketio = SocketIO(app, cors_allowed_origins="*")
 
 # Inicializa Flask-Login
 login_manager = LoginManager()
@@ -123,23 +126,65 @@ def signup():
 
     return render_template('register.html')
 
-def get_sensor_data():
-    return {
-        'x': [1, 2, 3, 4, 5],  # Datos del eje X (tiempo, por ejemplo)
-        'y': [random.randint(0, 100) for _ in range(5)]  # Datos del eje Y (valores aleatorios)
-    }
+@app.route('/nueva_rutina', methods=['POST'])
+def nueva_rutina():
+    try:
+        # Obtener los datos enviados como JSON
+        json_input = request.get_json().get('jsonInput', None)
 
-@socketio.on('connect')
-def handle_connect():
-    print("Client connected")
-    emit('new_data', get_sensor_data())  # Envía datos iniciales al conectarse
+        if not json_input:
+            return jsonify({"success": False, "message": "No se recibió ningún contenido."}), 400
 
-@socketio.on('get_data')
-def handle_get_data():
-    print("Data request received")
-    emit('new_data', get_sensor_data()) 
+        # Convertir el string a un objeto JSON
+
+        print("Llegue!!!!!!!!!!!!!!!")
+        try:
+            json_data = json.loads(json_input)
+        except json.JSONDecodeError:
+            return jsonify({"success": False, "message": "Contenido no es un JSON válido."}), 400
+
+        # Empaquetar json_data dentro de un nuevo diccionario con la clave "jsonInput"
+        payload = {
+            "jsonInput": json.dumps(json_data)  # Convertimos json_data en un string JSON
+        }
+        # Hacer el POST a /recibir_json
+        response = requests.post("http://localhost:5000/recibir_json", json=payload)
+        print(f"Respuesta de /recibir_json: {response.status_code}, {response.text}")
+
+        if response.status_code == 200:
+            return jsonify({"success": True, "message": "Datos enviados correctamente."}), 200
+        else:
+            return jsonify({"success": False, "message": "Hubo un error al enviar los datos."}), 500
+
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 400
 
 
+@app.route('/api/two-semaforos-data', methods=['GET'])
+def get_two_semaforos_data():
+    try:
+        semaforo_ids = [1, 2]  # IDs de los semáforos que deseas mostrar
+        data = {}
+
+        for semaforo_id in semaforo_ids:
+            latest_data = (
+                History.query.filter_by(id_semaforo=semaforo_id)
+                .order_by(History.ultima.desc())
+                .limit(8)
+                .all()
+            )
+            data[semaforo_id] = [
+                {
+                    'timestamp': record.ultima.isoformat(),
+                    'estado': int(record.estado),
+                }
+                for record in latest_data
+            ]
+
+        return jsonify({'success': True, 'data': data}), 200
+
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/index', methods=['POST', 'GET'])
 @login_required
@@ -149,7 +194,15 @@ def index():
 @app.route('/estadisticas/')
 @login_required
 def estadisticas():
-    return render_template('estadisticas.html')
+    # Obtener los datos de la avenida con id_avenida = 1
+    datos = HistoriaAvenida.query.filter_by(id_avenida=1).all()
+
+    # Formatear los datos para Chart.js
+    horas = [dato.hora.strftime("%H:%M") for dato in datos]  # Hora en formato HH:MM
+    densidad_vial = [dato.densidad_vial for dato in datos]
+    congestion = [dato.congestion for dato in datos]
+
+    return render_template('estadisticas.html', horas=horas, densidad_vial=densidad_vial, congestion=congestion)
 
 @app.route('/analisis/')
 @login_required
@@ -165,8 +218,18 @@ def monitoreo():
 @login_required
 @admin_required
 def usuarios():
-    return render_template('administrador_de_usuarios.html')
+    # Obtener la cantidad de visitantes y administradores
+    cantidad_visitantes = db.session.query(Visitante).count()
+    cantidad_administradores = db.session.query(Administrador).count()
 
+    # Obtener los visitantes con su información
+    visitantes = db.session.query(Visitante.username, Visitante.ultimo_ingreso, Visitante.correo).all()
+
+    # Pasar la información al template
+    return render_template('administrador_de_usuarios.html', 
+                           visitantes=visitantes, 
+                           cantidad_visitantes=cantidad_visitantes, 
+                           cantidad_administradores=cantidad_administradores)
 @app.route('/dispositivos')
 @login_required
 @admin_required
@@ -284,10 +347,6 @@ def widgets():
 
 
 
-
-
-
-
 @app.errorhandler(Exception)
 def handle_exception(e):
     return f"Error: {str(e)}", 500
@@ -302,5 +361,5 @@ def test_db():
     
 
 if __name__ == '__main__':
-    socketio.run(app, host='0.0.0.0', port=3000, debug=True)
+    app.run(host='0.0.0.0', port=3000, debug=False)
 

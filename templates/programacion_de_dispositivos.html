@@ -78,22 +78,56 @@
                   </div>
                   
                   
-                  <div class="card-body">
-                    <label for="jsonInput" class="form-label">JSON Input</label>
-                    <textarea 
-                      id="jsonInput" 
-                      name="jsonInput" 
-                      class="form-control" 
-                      rows="10" 
-                      placeholder="Enter JSON here..."
-                      style="font-family: monospace; resize: vertical;"></textarea>
-                  </div>
+                  <form id="jsonForm" onsubmit="sendJSON(event)">
+                    <div class="card-body">
+                        <label for="jsonInput" class="form-label">JSON Input</label>
+                        <textarea 
+                            id="jsonInput" 
+                            name="jsonInput" 
+                            class="form-control" 
+                            rows="10" 
+                            placeholder="Enter JSON here..."
+                            style="font-family: monospace; resize: vertical;"></textarea>
+                    </div>
+                    <div class="card-action">
+                        <button type="submit" class="btn btn-success">Submit</button>
+                        <button type="button" class="btn btn-danger">Cancel</button>
+                    </div>
+                </form>
+                <script>
+                function sendJSON(event) {
+                    event.preventDefault(); // Evita el comportamiento predeterminado del formulario
+                    const jsonInput = document.getElementById("jsonInput").value;
+                
+                    fetch("/nueva_rutina", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({ jsonInput })
+                    })
+                    .then(response => {
+                        if (response.ok) {
+                            return response.json();
+                        } else {
+                            throw new Error(`Error del servidor: ${response.status}`);
+                        }
+                    })
+                    .then(data => {
+                        if (data.success) {
+                            alert("¡Mensaje enviado correctamente al backend!");
+                        } else {
+                            alert(`Error: ${data.message}`);
+                        }
+                    })
+                    .catch(error => {
+                        alert(`Hubo un problema: ${error.message}`);
+                        console.error("Error:", error);
+                    });
+                }
+                </script>
 
 
-                  <div class="card-action">
-                    <button class="btn btn-success">Submit</button>
-                    <button class="btn btn-danger">Cancel</button>
-                  </div>
                 </div>
               </div>
             </div>
@@ -107,6 +141,10 @@
       {% include 'settings.html' %}
       <!-- End Custom template -->
     </div>
+    <div id="message" style="margin-top: 20px;"></div>
+
+    
+  
     <!--   Core JS Files   -->
     <script src="{{ url_for('static', filename='/js/core/jquery-3.7.1.min.js')}}"></script>
     <script src="{{ url_for('static', filename='/js/core/popper.min.js')}}"></script>

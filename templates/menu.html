@@ -41,14 +41,7 @@
                   <p>Estadisticas</p>
                 </a>
               </li>
-
-              <li class="nav-item active">
-                <a href="{{ url_for('analisis') }}">
-                  <i class="fas fa-chart-pie"></i>
-                  <p>Analisis de trafico</p>
-                </a>
-              </li>
-
+              
               <li class="nav-item active">
                 <a href="{{ url_for('monitoreo') }}">
                   <i class="fas fa-tasks"></i>
@@ -56,19 +49,23 @@
                 </a>
               </li>
 
+              {% if session['tipo_usuario'] == 'administrador' %}
+
               <li class="nav-item active">
                 <a href="{{ url_for('usuarios') }}">
                   <i class="fas fa-user-cog"></i>
                   <p>Control de usuarios</p>
                 </a>
               </li>
-
+              {% endif %}
+              {% if session['tipo_usuario'] == 'administrador' %}
               <li class="nav-item active">
                 <a href="{{ url_for('dispositivos') }}">
                   <i class="fas fa-play"></i>
                   <p>Programacion de dispositivos</p>
                 </a>
               </li>
+              {% endif %}
 
               <li class="nav-item">
                 <a href="https://github.com/OmarUTEC/SmartTraffic-Cloud/tree/main">

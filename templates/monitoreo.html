@@ -58,11 +58,14 @@
               developers. Please checkout their
               <a href="http://www.chartjs.org/" target="_blank">full documentation</a>.
             </div>
-            <div>
-              <canvas id="myChart"></canvas>
+
+            <div id="charts-container">
+              <canvas id="chart-semaforo-1"></canvas>
             </div>
-
-
+            <div id="charts-container">
+              <canvas id="chart-semaforo-2"></canvas>
+            </div>
+            
           </div>
         </div>
 
@@ -89,86 +92,87 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-  const socket = io('http://localhost:3000', {
-    transports: ['polling', 'websocket']
-  });
+    <script>
+document.addEventListener("DOMContentLoaded", () => {
+  fetchTwoSemaforosData([1, 2]); // Lista de IDs de los semáforos
+});
 
-  // Inicializar el gráfico
-  const ctx = document.getElementById('myChart').getContext('2d');
-  const myLineChart = new Chart(ctx, {
-    type: 'line',
+async function fetchTwoSemaforosData(semaforoIds) {
+  try {
+    console.log("Fetching data from the backend...");
+    const response = await fetch('http://18.209.10.52:3000/api/two-semaforos-data');
+    const result = await response.json();
+    console.log("Data received:", result);
+
+    if (result.success) {
+      semaforoIds.forEach(id => {
+        const semaforoData = result.data[id];
+        if (semaforoData) {
+          console.log(`Processing data for Semáforo ${id}...`);
+          const labels = semaforoData.map(item => new Date(item.timestamp).toLocaleTimeString());
+          const values = semaforoData.map(item => item.estado);
+          createChart(`chart-semaforo-${id}`, `Semáforo ${id}`, labels, values);
+        } else {
+          console.warn(`No data found for Semáforo ${id}`);
+        }
+      });
+    } else {
+      console.error("Error in backend response:", result.error);
+    }
+  } catch (error) {
+    console.error("Fetch error:", error);
+  }
+}
+
+function createChart(canvasId, title, labels, data) {
+  const ctx = document.getElementById(canvasId)?.getContext("2d");
+  if (!ctx) {
+    console.error(`Canvas with ID "${canvasId}" not found.`);
+    return;
+  }
+
+  new Chart(ctx, {
+    type: "line",
     data: {
-      labels: [], // Será llenado con las etiquetas (eje X)
-      datasets: [{
-        label: 'Lecturas del sensor',
-        borderColor: '#1d7af3',
-        backgroundColor: 'transparent',
-        pointBorderColor: '#FFF',
-        pointBackgroundColor: '#1d7af3',
-        pointRadius: 4,
-        fill: true,
-        borderWidth: 2,
-        data: []  // Será llenado con los datos (eje Y)
-      }]
+      labels: labels,
+      datasets: [
+        {
+          label: title,
+          borderColor: "#1d7af3",
+          pointBorderColor: "#FFF",
+          pointBackgroundColor: "#1d7af3",
+          pointBorderWidth: 2,
+          pointHoverRadius: 4,
+          pointHoverBorderWidth: 1,
+          pointRadius: 4,
+          backgroundColor: "transparent",
+          fill: true,
+          borderWidth: 2,
+          data: data,
+        },
+      ],
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
       scales: {
-        x: {
-          type: 'linear', // Asumimos que el eje X es numérico (tiempo, por ejemplo)
-          position: 'bottom'
-        },
         y: {
-          beginAtZero: true
-        }
+          beginAtZero: true,
+          ticks: {
+            stepSize: 1,
+            callback: function (value) {
+              return value === 1 ? "Encendido" : "Apagado";
+            },
+          },
+        },
       },
-      plugins: {
-        legend: {
-          position: 'bottom',
-        }
-      }
-    }
+    },
   });
+}
 
-  // Función para actualizar el gráfico con los nuevos datos
-  function updateChart(data) {
-    const { x, y } = data;
-
-    myLineChart.data.labels = x;
-    myLineChart.data.datasets[0].data = y;
-
-    myLineChart.update();
-  }
-
-  // Manejo de errores de conexión
-  socket.on('connect_error', (err) => {
-    console.error('Error de conexión: ', err.message);
-  });
-
-  socket.on('connect_timeout', () => {
-    console.error('Tiempo de conexión agotado');
-  });
-
-  socket.on('disconnect', () => {
-    console.log('Desconectado del servidor');
-  });
-
-  // Escuchar los eventos 'new_data' que el servidor emite
-  socket.on('new_data', function(data) {
-    console.log('New data received: ', data);
-    updateChart(data);  // Actualizar el gráfico con los datos recibidos
-  });
-
-  // Simulación de solicitud de datos cada 5 segundos
-  setInterval(() => {
-    try {
-      socket.emit("get_data");  // Solicitar datos al servidor
-    } catch (error) {
-      console.error('Error al emitir la solicitud: ', error);
-    }
-  }, 5000); // Solicitar datos cada 5 segundos
-</script>
+    </script>
+    
+    
+    
 
 </html>
